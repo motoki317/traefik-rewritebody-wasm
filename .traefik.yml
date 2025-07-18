@@ -1,11 +1,10 @@
-displayName: Demo Plugin WASM
+displayName: Streaming body rewrite
 runtime: wasm
 type: middleware
-iconPath: .assets/icon.png
 
-summary: '[Demo WASM] Add Request Header'
+summary: 'Rewrite response body in a streaming manner in WASM'
 
 testData:
-  Headers:
-    X-Demo: test
-    X-URL: '{{URL}}'
+  rewrites:
+    - from: foo
+      to: bar
