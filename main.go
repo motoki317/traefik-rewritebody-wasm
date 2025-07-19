@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	"github.com/http-wasm/http-wasm-guest-tinygo/handler"
 	"github.com/http-wasm/http-wasm-guest-tinygo/handler/api"
@@ -75,14 +76,20 @@ func (p *Plugin) handleResponse(_ uint32, req api.Request, resp api.Response, is
 	handler.Host.Log(api.LogLevelInfo, "Processing response for url="+req.GetURI())
 
 	// Create wrappers for WASI Body interface
-	writer := NewBodyWriter(resp.Body())
+	reader := NewBodyReader(resp.Body())
+	//writer := NewBodyWriter(resp.Body())
 
 	// Create the transformer chain with our reader
-	transformer := p.chain(writer)
+	//transformer := p.chain(writer)
 
 	// Copy the transformed content to the writer
-	_, err := resp.Body().WriteTo(transformer)
-	if err != nil {
-		handler.Host.Log(api.LogLevelError, fmt.Sprintf("Could not write response %v", err))
-	}
+	b, _ := io.ReadAll(reader)
+	handler.Host.Log(api.LogLevelInfo, "Response body="+string(b))
+	b = []byte(strings.ReplaceAll(string(b), "whoami", "REPLACED"))
+	resp.Headers().Set("Content-Length", fmt.Sprintf("%d", len(b)))
+	resp.Body().Write(b)
+	//_, err := resp.Body().WriteTo(writer)
+	//if err != nil {
+	//	handler.Host.Log(api.LogLevelError, fmt.Sprintf("Could not write response %v", err))
+	//}
 }
