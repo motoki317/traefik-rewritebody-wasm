@@ -1,8 +1,10 @@
+version: 2
+
 project_name: traefik-rewritebody-wasm
 
 builds:
   - binary: plugin.wasm
-    gobinary: tinygo
+    tool: tinygo
     no_unique_dist_dir: true
     main: .
     flags:
@@ -30,7 +32,8 @@ changelog:
 archives:
   - id: traefik-rewritebody-wasm
     name_template: '{{ .ProjectName }}_v{{ .Version }}'
-    format: zip
+    formats:
+      - zip
     files:
       - LICENSE
       - .traefik.yml
