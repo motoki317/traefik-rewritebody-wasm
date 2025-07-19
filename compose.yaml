@@ -1,4 +1,20 @@
+volumes:
+  plugin_src:
+
 services:
+  watch-init:
+    image: busybox
+    volumes:
+      - ./:/host:ro
+      - plugin_src:/plugins-local/src/github.com/motoki317/traefik-rewritebody-wasm
+    command:
+      - sh
+      - -c
+      - |
+        cp -a /host/. /plugins-local/src/github.com/motoki317/traefik-rewritebody-wasm
+        echo '[init] files copied.'
+    restart: "no"
+
   traefik:
     image: traefik:v3.0
     command:
@@ -6,14 +22,22 @@ services:
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
       - "--entrypoints.web.address=:80"
+      - "--entryPoints.web.transport.lifeCycle.graceTimeOut=0"
       - "--log.level=DEBUG"
       - "--experimental.localPlugins.rewritebody.modulename=github.com/motoki317/traefik-rewritebody-wasm"
     ports:
       - "80:80"
       - "8080:8080"
     volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock:ro"
-      - "./:/plugins-local/src/github.com/motoki317/traefik-rewritebody-wasm"
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - plugin_src:/plugins-local/src/github.com/motoki317/traefik-rewritebody-wasm
+    depends_on:
+      - watch-init
+    develop:
+      watch:
+        - action: sync+restart
+          path: ./
+          target: /plugins-local/src/github.com/motoki317/traefik-rewritebody-wasm
 
   whoami:
     image: traefik/whoami
