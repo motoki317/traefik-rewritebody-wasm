@@ -2,24 +2,18 @@ package main
 
 import (
 	"io"
-)
 
-// Body interface represents the WASI Body interface
-type Body interface {
-	WriteTo(io.Writer) (size uint64, err error)
-	Read([]byte) (size uint32, eof bool)
-	Write([]byte)
-	WriteString(string)
-}
+	"github.com/http-wasm/http-wasm-guest-tinygo/handler/api"
+)
 
 // BodyReader wraps a WASI Body to implement io.Reader
 type BodyReader struct {
-	body Body
+	body api.Body
 	eof  bool
 }
 
 // NewBodyReader creates a new BodyReader from a WASI Body
-func NewBodyReader(body Body) *BodyReader {
+func NewBodyReader(body api.Body) *BodyReader {
 	return &BodyReader{body: body}
 }
 
@@ -41,11 +35,11 @@ func (br *BodyReader) Read(p []byte) (n int, err error) {
 
 // BodyWriter wraps a WASI Body to implement io.Writer
 type BodyWriter struct {
-	body Body
+	body api.Body
 }
 
 // NewBodyWriter creates a new BodyWriter from a WASI Body
-func NewBodyWriter(body Body) *BodyWriter {
+func NewBodyWriter(body api.Body) *BodyWriter {
 	return &BodyWriter{body: body}
 }
 
