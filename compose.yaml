@@ -2,21 +2,8 @@ volumes:
   plugin-src:
 
 services:
-  watch-init:
-    image: busybox
-    volumes:
-      - ./:/host:ro
-      - plugin-src:/plugin-src
-    command:
-      - sh
-      - -c
-      - |
-        cp -a /host/. /plugin-src
-        echo '[init] files copied.'
-    restart: "no"
-
   traefik:
-    image: traefik
+    build: .
     command:
       - "--api.insecure=true"
       - "--providers.docker=true"
@@ -30,17 +17,15 @@ services:
       - "8080:8080"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - plugin-src:/plugins-local/src/github.com/motoki317/traefik-rewritebody-wasm
-    depends_on:
-      - watch-init
     develop:
       watch:
-        - action: sync+restart
-          path: ./
-          target: /plugins-local/src/github.com/motoki317/traefik-rewritebody-wasm
+        - action: rebuild
+          path: .
 
   whoami:
     image: traefik/whoami
+    command:
+      - -verbose
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.whoami.rule=Host(`whoami.localhost`)"

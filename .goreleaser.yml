@@ -1,4 +1,4 @@
-project_name: plugindemowasm
+project_name: traefik-rewritebody-wasm
 
 builds:
   - binary: plugin.wasm
@@ -15,7 +15,6 @@ builds:
       - linux
     goarch:
       - amd64
-      - arm64
 
 changelog:
   sort: asc
@@ -29,7 +28,7 @@ changelog:
       - '^tests:'
 
 archives:
-  - id: plugindemowasm
+  - id: traefik-rewritebody-wasm
     name_template: '{{ .ProjectName }}_v{{ .Version }}'
     format: zip
     files:
