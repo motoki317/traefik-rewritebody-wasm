@@ -1,17 +1,17 @@
 volumes:
-  plugin_src:
+  plugin-src:
 
 services:
   watch-init:
     image: busybox
     volumes:
       - ./:/host:ro
-      - plugin_src:/plugins-local/src/github.com/motoki317/traefik-rewritebody-wasm
+      - plugin-src:/plugin_src
     command:
       - sh
       - -c
       - |
-        cp -a /host/. /plugins-local/src/github.com/motoki317/traefik-rewritebody-wasm
+        cp -a /host/. /plugin_src
         echo '[init] files copied.'
     restart: "no"
 
@@ -30,7 +30,7 @@ services:
       - "8080:8080"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - plugin_src:/plugins-local/src/github.com/motoki317/traefik-rewritebody-wasm
+      - plugin-src:/plugins-local/src/github.com/motoki317/traefik-rewritebody-wasm
     depends_on:
       - watch-init
     develop:
