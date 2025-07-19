@@ -31,5 +31,7 @@ services:
       - "traefik.http.routers.whoami.rule=Host(`whoami.localhost`)"
       - "traefik.http.routers.whoami.entrypoints=web"
       - "traefik.http.routers.whoami.middlewares=rewritebody"
+      - "traefik.http.middlewares.rewritebody.plugin.rewritebody.allowedContentTypes[0]=text/html"
+      - "traefik.http.middlewares.rewritebody.plugin.rewritebody.allowedContentTypes[1]=text/plain"
       - "traefik.http.middlewares.rewritebody.plugin.rewritebody.rewrites[0].from=whoami"
       - "traefik.http.middlewares.rewritebody.plugin.rewritebody.rewrites[0].to=REWRITTEN"

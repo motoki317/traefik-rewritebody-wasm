@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	"github.com/http-wasm/http-wasm-guest-tinygo/handler"
 	"github.com/http-wasm/http-wasm-guest-tinygo/handler/api"
@@ -28,12 +29,13 @@ func main() {
 		os.Exit(1)
 	}
 	handler.HandleResponseFn = mw.handleResponse
-	handler.Host.Log(api.LogLevelInfo, fmt.Sprintf("Loaded plugin with %d rewrite(s)", len(config.Rewrites)))
+	handler.Host.Log(api.LogLevelInfo, fmt.Sprintf("[traefik-rewritebody-wasm] Loaded plugin with %d rewrite(s), allowed content types: %v", len(config.Rewrites), mw.allowedContentTypes))
 }
 
 // Config is the plugin configuration.
 type Config struct {
-	Rewrites []Rewrite `json:"rewrites"`
+	AllowedContentTypes []string  `json:"allowedContentTypes"`
+	Rewrites            []Rewrite `json:"rewrites"`
 }
 
 type Rewrite struct {
@@ -41,26 +43,44 @@ type Rewrite struct {
 	To   string `json:"to"`
 }
 
+func (c *Config) createTransformer() transform.Transformer {
+	replacers := make([]transform.Transformer, len(c.Rewrites))
+	for i, rewrite := range c.Rewrites {
+		replacers[i] = replace.String(rewrite.From, rewrite.To)
+	}
+	if len(replacers) == 0 {
+		return transform.Nop
+	}
+	if len(replacers) == 1 {
+		return replacers[0]
+	}
+	return transform.Chain(replacers...)
+}
+
 // Plugin is a plugin instance.
 type Plugin struct {
-	replacer transform.Transformer
+	allowedContentTypes []string
+	replacer            transform.Transformer
 }
 
 // New creates a new plugin instance.
 func New(config Config) (*Plugin, error) {
-	replacers := make([]transform.Transformer, len(config.Rewrites))
-	for i, rewrite := range config.Rewrites {
-		replacers[i] = replace.String(rewrite.From, rewrite.To)
-	}
-	if len(replacers) == 0 {
-		return &Plugin{replacer: transform.Nop}, nil
-	}
-	if len(replacers) == 1 {
-		return &Plugin{replacer: replacers[0]}, nil
-	}
 	return &Plugin{
-		replacer: transform.Chain(replacers...),
+		allowedContentTypes: config.AllowedContentTypes,
+		replacer:            config.createTransformer(),
 	}, nil
+}
+
+func (p *Plugin) isAllowedType(contentType string) bool {
+	if len(p.allowedContentTypes) == 0 {
+		return true
+	}
+	for _, allowedType := range p.allowedContentTypes {
+		if strings.Contains(contentType, allowedType) {
+			return true
+		}
+	}
+	return false
 }
 
 func (p *Plugin) handleResponse(_ uint32, req api.Request, resp api.Response, isError bool) {
@@ -68,8 +88,12 @@ func (p *Plugin) handleResponse(_ uint32, req api.Request, resp api.Response, is
 	if isError {
 		return
 	}
+	// Only process configured content-types
+	if contentType, ok := resp.Headers().Get("Content-Type"); ok && !p.isAllowedType(contentType) {
+		return
+	}
 
-	handler.Host.Log(api.LogLevelInfo, "Processing response for url="+req.GetURI())
+	handler.Host.Log(api.LogLevelDebug, "Processing rewrite for uri: "+req.GetURI())
 
 	// Create wrappers for WASI Body interface
 	reader := NewBodyReader(resp.Body())
@@ -79,7 +103,7 @@ func (p *Plugin) handleResponse(_ uint32, req api.Request, resp api.Response, is
 	transformed := transform.NewReader(reader, p.replacer)
 
 	// Copy the transformed content to the writer
-	buf := make([]byte, 2*1024)
+	buf := make([]byte, 2*1024) // 2KiB buffer size is excepted from resp.Body().WriteTo() implementation.
 	n, err := io.CopyBuffer(writer, transformed, buf)
 	if err != nil {
 		handler.Host.Log(api.LogLevelError, fmt.Sprintf("Could not write response %v", err))

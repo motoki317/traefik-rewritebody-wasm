@@ -2,6 +2,10 @@
 test:
 	go test -v -cover ./...
 
+.PHONY: dev
+dev:
+	docker compose up --build --watch
+
 .PHONY: build-debug
 build-debug:
 	tinygo build -o plugin.wasm -scheduler=none -target=wasi .

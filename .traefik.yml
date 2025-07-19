@@ -5,6 +5,8 @@ type: middleware
 summary: 'Rewrite response body in a streaming manner in WASM'
 
 testData:
+  allowedContentTypes:
+    - text/html
   rewrites:
     - from: foo
       to: bar

@@ -24,7 +24,7 @@ experimental:
 ### Local Development
 
 ```shell
-docker compose up --watch --build
+make dev
 ```
 
 ## Configuration
@@ -36,6 +36,8 @@ http:
     my-rewriter:
       plugin:
         rewritebody:
+          allowedContentTypes: # Optional
+            - text/html
           rewrites:
             - from: "old-domain.com"
               to: "new-domain.com"
@@ -45,6 +47,7 @@ http:
 
 ## Options
 
+- `allowedContentTypes`: Array of allowed content types to be rewritten (optional)
 - `rewrites`: Array of rewrite rules
   - `from`: String to search for
   - `to`: String to replace with
@@ -64,6 +67,8 @@ http:
     my-rewriter:
       plugin:
         rewritebody:
+          allowedContentTypes: # Optional
+            - text/html
           rewrites:
             - from: "localhost:8080"
               to: "example.com"
