@@ -6,17 +6,17 @@ services:
     image: busybox
     volumes:
       - ./:/host:ro
-      - plugin-src:/plugin_src
+      - plugin-src:/plugin-src
     command:
       - sh
       - -c
       - |
-        cp -a /host/. /plugin_src
+        cp -a /host/. /plugin-src
         echo '[init] files copied.'
     restart: "no"
 
   traefik:
-    image: traefik:v3.0
+    image: traefik
     command:
       - "--api.insecure=true"
       - "--providers.docker=true"

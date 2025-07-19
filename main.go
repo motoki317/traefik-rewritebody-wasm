@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	"github.com/http-wasm/http-wasm-guest-tinygo/handler"
 	"github.com/http-wasm/http-wasm-guest-tinygo/handler/api"
@@ -26,7 +27,8 @@ func main() {
 		os.Exit(1)
 	}
 	handler.HandleRequestFn = mw.handleRequest
-	handler.HandleResponseFn = mw.handleResponse
+	//handler.HandleResponseFn = mw.handleResponse
+	handler.Host.Log(api.LogLevelInfo, "Loaded plugin")
 }
 
 // Config is the plugin configuration.
@@ -55,9 +57,19 @@ func New(config Config) (*Plugin, error) {
 	}, nil
 }
 
-func (p *Plugin) handleRequest(_ api.Request, _ api.Response) (next bool, reqCtx uint32) {
-	// Pass through to the next handler
-	return true, 0
+// handle implements a simple HTTP router.
+func (p *Plugin) handleRequest(req api.Request, resp api.Response) (next bool, reqCtx uint32) {
+	// If the URI starts with /host, trim it and dispatch to the next handler.
+	if uri := req.GetURI(); strings.HasPrefix(uri, "/host") {
+		req.SetURI(uri[5:])
+		next = true // proceed to the next handler on the host.
+		return
+	}
+
+	// Serve a static response
+	resp.Headers().Set("Content-Type", "text/plain")
+	//resp.Body().WriteString("hello")
+	return // skip any handlers as the response is written.
 }
 
 func (p *Plugin) handleResponse(_ uint32, _ api.Request, resp api.Response, isError bool) {
