@@ -3,7 +3,7 @@ FROM tinygo/tinygo:0.34.0 AS build
 WORKDIR /work
 
 COPY . .
-RUN make build
+RUN make build-debug
 
 FROM traefik
 

@@ -13,7 +13,7 @@ import (
 )
 
 func main() {
-	features := handler.Host.EnableFeatures(api.FeatureBufferRequest | api.FeatureBufferResponse)
+	features := handler.Host.EnableFeatures(api.FeatureBufferResponse)
 	handler.Host.Log(api.LogLevelInfo, "[DEBUG] Features enabled: "+features.String())
 
 	var config Config
@@ -58,22 +58,31 @@ func New(config Config) (*Plugin, error) {
 	}, nil
 }
 
-func (p *Plugin) handleResponse(_ uint32, _ api.Request, resp api.Response, isError bool) {
+func (p *Plugin) chain(w io.Writer) io.Writer {
+	ret := w
+	for i := len(p.replacers) - 1; i >= 0; i-- {
+		ret = transform.NewWriter(ret, p.replacers[i])
+	}
+	return ret
+}
+
+func (p *Plugin) handleResponse(_ uint32, req api.Request, resp api.Response, isError bool) {
 	// Only process successful responses
 	if isError {
 		return
 	}
 
-	handler.Host.Log(api.LogLevelInfo, "Processing response")
+	handler.Host.Log(api.LogLevelInfo, "Processing response for url="+req.GetURI())
 
 	// Create wrappers for WASI Body interface
-	reader := NewBodyReader(resp.Body())
 	writer := NewBodyWriter(resp.Body())
 
 	// Create the transformer chain with our reader
-	//transformer := replace.Chain(reader, p.replacers...) // TODO: not working
+	transformer := p.chain(writer)
 
 	// Copy the transformed content to the writer
-	//_, _ = io.Copy(writer, transformer)
-	_, _ = io.Copy(writer, reader)
+	_, err := resp.Body().WriteTo(transformer)
+	if err != nil {
+		handler.Host.Log(api.LogLevelError, fmt.Sprintf("Could not write response %v", err))
+	}
 }

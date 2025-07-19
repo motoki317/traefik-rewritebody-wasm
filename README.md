@@ -23,12 +23,8 @@ experimental:
 
 ### Local Development
 
-```yaml
-# Static configuration
-experimental:
-  localPlugins:
-    rewritebody:
-      moduleName: github.com/motoki317/traefik-rewritebody-wasm
+```shell
+docker compose up --watch --build
 ```
 
 ## Configuration
