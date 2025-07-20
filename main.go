@@ -29,7 +29,7 @@ func main() {
 		os.Exit(1)
 	}
 	handler.HandleResponseFn = mw.handleResponse
-	handler.Host.Log(api.LogLevelInfo, fmt.Sprintf("[traefik-rewritebody-wasm] Loaded plugin with %d rewrite(s), allowed content types: %v", len(config.Rewrites), mw.allowedContentTypes))
+	handler.Host.Log(api.LogLevelDebug, fmt.Sprintf("[traefik-rewritebody-wasm] Loaded plugin with %d rewrite(s), allowed content types: %v", len(config.Rewrites), mw.allowedContentTypes))
 }
 
 // Config is the plugin configuration.
