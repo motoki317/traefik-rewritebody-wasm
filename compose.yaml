@@ -35,3 +35,16 @@ services:
       - "traefik.http.middlewares.rewritebody.plugin.rewritebody.allowedContentTypes[1]=text/plain"
       - "traefik.http.middlewares.rewritebody.plugin.rewritebody.rewrites[0].from=whoami"
       - "traefik.http.middlewares.rewritebody.plugin.rewritebody.rewrites[0].to=REWRITTEN"
+
+  # TODO: plugin panics with "wasm error: out of bounds memory access" with specific responses
+  caddy:
+    image: caddy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.caddy.rule=Host(`caddy.localhost`)"
+      - "traefik.http.routers.caddy.entrypoints=web"
+      - "traefik.http.routers.caddy.middlewares=rewritebody_caddy"
+      - "traefik.http.middlewares.rewritebody_caddy.plugin.rewritebody.allowedContentTypes[0]=text/html"
+      - "traefik.http.middlewares.rewritebody_caddy.plugin.rewritebody.allowedContentTypes[1]=text/plain"
+      - "traefik.http.middlewares.rewritebody_caddy.plugin.rewritebody.rewrites[0].from=Caddy"
+      - "traefik.http.middlewares.rewritebody_caddy.plugin.rewritebody.rewrites[0].to=REWRITTEN"
