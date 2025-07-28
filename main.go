@@ -89,7 +89,9 @@ func (p *Plugin) handleResponse(_ uint32, req api.Request, resp api.Response, is
 		return
 	}
 	// Only process configured content-types
-	if contentType, ok := resp.Headers().Get("Content-Type"); ok && !p.isAllowedType(contentType) {
+	// If no Content-Type response header is present and allowed-type configuration is present, skip processing to be safe.
+	contentType, _ := resp.Headers().Get("Content-Type")
+	if !p.isAllowedType(contentType) {
 		return
 	}
 
