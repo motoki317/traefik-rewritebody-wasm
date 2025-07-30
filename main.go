@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/http-wasm/http-wasm-guest-tinygo/handler"
 	"github.com/http-wasm/http-wasm-guest-tinygo/handler/api"
-	"github.com/icholy/replace"
+	"github.com/motoki317/traefik-rewritebody-wasm/replace"
 	"golang.org/x/text/transform"
 )
 
@@ -41,20 +42,31 @@ type Config struct {
 type Rewrite struct {
 	From string `json:"from"`
 	To   string `json:"to"`
+	// NOTE: due to a bug in traefik's YAML parser, it reads all YAML values as string and encodes it into JSON.
+	// https://github.com/traefik/paerser/issues/64
+	Count string `json:"count"`
 }
 
-func (c *Config) createTransformer() transform.Transformer {
+func (c *Config) createTransformer() (transform.Transformer, error) {
 	replacers := make([]transform.Transformer, len(c.Rewrites))
 	for i, rewrite := range c.Rewrites {
-		replacers[i] = replace.String(rewrite.From, rewrite.To)
+		var count int
+		var err error
+		if rewrite.Count != "" {
+			count, err = strconv.Atoi(rewrite.Count)
+			if err != nil {
+				return nil, err
+			}
+		}
+		replacers[i] = replace.String(rewrite.From, rewrite.To, count)
 	}
 	if len(replacers) == 0 {
-		return transform.Nop
+		return transform.Nop, nil
 	}
 	if len(replacers) == 1 {
-		return replacers[0]
+		return replacers[0], nil
 	}
-	return transform.Chain(replacers...)
+	return transform.Chain(replacers...), nil
 }
 
 // Plugin is a plugin instance.
@@ -65,9 +77,13 @@ type Plugin struct {
 
 // New creates a new plugin instance.
 func New(config Config) (*Plugin, error) {
+	replacer, err := config.createTransformer()
+	if err != nil {
+		return nil, err
+	}
 	return &Plugin{
 		allowedContentTypes: config.AllowedContentTypes,
-		replacer:            config.createTransformer(),
+		replacer:            replacer,
 	}, nil
 }
 

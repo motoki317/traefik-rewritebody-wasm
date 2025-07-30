@@ -41,6 +41,7 @@ http:
           rewrites:
             - from: "old-domain.com"
               to: "new-domain.com"
+              count: 1 # Specify count to limit transform count
             - from: "http://"
               to: "https://"
 ```
@@ -51,6 +52,7 @@ http:
 - `rewrites`: Array of rewrite rules
   - `from`: String to search for
   - `to`: String to replace with
+  - `count` (optional): Max replacement count
 
 ## Example
 
@@ -72,6 +74,7 @@ http:
           rewrites:
             - from: "localhost:8080"
               to: "example.com"
+              count: 1
             - from: "http://api.internal"
               to: "https://api.example.com"
 

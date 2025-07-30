@@ -10,3 +10,4 @@ testData:
   rewrites:
     - from: foo
       to: bar
+      count: 1
